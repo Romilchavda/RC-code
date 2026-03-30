@@ -189,16 +189,43 @@ function renameFile(oldName) {
     });
 }
 
-// 🚀 NEW FEATURE: Download Project as ZIP
+// 🚀 FIXED FEATURE: Download Project as ZIP (Mobile Supported)
 async function downloadProject() {
-    if (Object.keys(files).length === 0) { showModal("Error", "confirm", "No files to download!", ()=>{}); return; }
-    const zip = new JSZip();
-    for (const [path, content] of Object.entries(files)) { if (!path.endsWith('.keep')) zip.file(path, content); }
-    const blob = await zip.generateAsync({ type: "blob" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "RC_Code_Project.zip";
-    link.click();
+    try {
+        if (Object.keys(files).length === 0) { 
+            showModal("Error", "confirm", "No files to download!", ()=>{}); 
+            return; 
+        }
+        
+        // ZIP banate waqt icon ko ghumayenge (Loading animation)
+        const dlBtn = document.querySelector('.codicon-archive');
+        if(dlBtn) dlBtn.className = "codicon codicon-sync codicon-modifier-spin icon-btn";
+
+        const zip = new JSZip();
+        for (const[path, content] of Object.entries(files)) { 
+            if (!path.endsWith('.keep')) {
+                zip.file(path, content); 
+            } 
+        }
+        
+        const blob = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "RC_Code_Project.zip";
+        
+        // 🚨 MOBILE BUG FIX: Link ko pehle body me add karna zaroori hai
+        document.body.appendChild(link); 
+        link.click();
+        document.body.removeChild(link); // Download hone ke baad link hata do
+        
+        // Icon wapas normal kar do
+        if(dlBtn) dlBtn.className = "codicon codicon-archive icon-btn";
+        
+    } catch (err) {
+        showModal("Error", "confirm", "Download failed: " + err.message, ()=>{});
+        const dlBtn = document.querySelector('.codicon-sync');
+        if(dlBtn) dlBtn.className = "codicon codicon-archive icon-btn";
+    }
 }
 
 // 🚀 NEW FEATURE: Upload Local Files
@@ -382,8 +409,4 @@ document.addEventListener('mousemove', (e) => { if (isResizingH) { let h = windo
 document.addEventListener('mouseup', () => { if (isResizingH) { isResizingH = false; document.body.style.cursor = 'default'; if(editor) editor.layout(); } });
 
 // 🚀 Keyboard Shortcuts Map
-document.addEventListener('keydown', (e) => { 
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); runCode(); } // Save to Run
-    if ((e.ctrlKey || e.metaKey) && e.key === 'l') { e.preventDefault(); clearOutput(); } // Clear Terminal
-    if (e.altKey && e.shiftKey && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); formatCode(); } // Format Code
-});
+docume
