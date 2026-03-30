@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12,8 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" rel="stylesheet">
     
-    <!-- 🚨 YAHAN WOH LIBRARIES HAIN JO MISSING THI 🚨 -->
-<!-- 🚨 JSZip KO SABSE UPAR RAKHNA HAI 🚨 -->
+    <!-- 🚨 JSZip KO SABSE UPAR RAKHNA HAI (Download Fix) 🚨 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <!-- Uske baad Monaco aur baaki sab -->
@@ -24,8 +24,9 @@
     <script src="https://unpkg.com/prettier@2.8.8/parser-css.js"></script>
     <script src="https://unpkg.com/prettier@2.8.8/parser-babel.js"></script>
 </head>
-<body>
 
+<body>
+    
     <!-- Premium Custom Modal (Popup) -->
     <div class="modal-overlay" id="custom-modal">
         <div class="modal-box">
@@ -40,10 +41,40 @@
             </div>
         </div>
     </div>
-
+    
+    <!-- 🚀 NEW: CUSTOM SNIPPET MANAGER MODAL -->
+    <div class="modal-overlay" id="snippet-modal">
+        <div class="modal-box" style="width: 90%; max-width: 500px;">
+            <div class="modal-header">Manage Custom Snippets</div>
+            <div class="modal-body" style="text-align: left;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select id="snip-lang" class="modal-input" style="width: 40%; padding: 8px;">
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="javascript">JavaScript</option>
+                    </select>
+                    <input type="text" id="snip-trigger" class="modal-input" style="width: 60%;" placeholder="Shortcut (e.g. ! or clg)">
+                </div>
+                <textarea id="snip-code" class="modal-input" style="height: 120px; resize: vertical; font-family: monospace;" placeholder="Enter your code here...\nUse $1, $2 to set cursor positions."></textarea>
+                
+                <button class="btn-confirm" onclick="saveCustomSnippet()" style="width: 100%; margin-top: 10px; margin-bottom: 15px;">Save Snippet</button>
+                
+                <div style="border-top: 1px solid #444; padding-top: 10px;">
+                    <strong style="color: #ccc; font-size: 14px;">Your Saved Snippets:</strong>
+                    <div id="snippet-list" style="max-height: 150px; overflow-y: auto; margin-top: 10px; font-size: 13px;">
+                        <!-- List of snippets will appear here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeSnippetManager()">Close</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Mobile Sidebar Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
-
+    
     <!-- Top Header -->
     <header class="header">
         <div class="brand">
@@ -57,16 +88,18 @@
             </button>
         </div>
     </header>
-
+    
     <div class="app-body">
         <!-- Activity Bar -->
         <div class="activity-bar" id="activity-bar">
             <div class="act-top">
                 <i class="codicon codicon-files active" title="Explorer"></i>
+                <!-- 🚀 NEW: SNIPPET MANAGER BUTTON -->
+                <i class="codicon codicon-symbol-snippet icon-btn" onclick="openSnippetManager()" title="Custom Snippets" style="margin-top: 15px; cursor: pointer; color: #8b949e;"></i>
             </div>
             <div class="act-bottom"></div>
         </div>
-
+        
         <!-- Sidebar (Explorer) -->
         <div class="sidebar" id="sidebar">
             <div class="section-header">
@@ -83,18 +116,18 @@
             
             <div class="file-tree" id="fileTree"></div>
         </div>
-
+        
         <!-- Vertical Resizer -->
         <div class="resizer-v" id="resizer-v"></div>
-
+        
         <!-- Main Workspace -->
         <div class="main-workspace">
             <div class="tabs-container" id="fileTabs"></div>
             <div id="editor-container"></div>
-
+            
             <!-- Horizontal Resizer -->
             <div class="resizer-h" id="resizer-h"></div>
-
+            
             <!-- Terminal / Output -->
             <div class="terminal-container" id="terminal-container">
                 <div class="terminal-tabs">
@@ -111,7 +144,7 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Status Bar -->
     <footer class="status-bar">
         <div class="status-left">
@@ -122,7 +155,14 @@
             <span id="current-language">Python</span>
         </div>
     </footer>
-
+    
+    <!-- 3 Files mein divided scripts -->
+    <script src="assets/system.js"></script>
+    <script src="assets/snippets.js"></script>
     <script src="assets/app.js"></script>
 </body>
+
+</html>
+</body>
+
 </html>
