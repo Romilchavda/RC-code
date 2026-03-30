@@ -12,9 +12,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" rel="stylesheet">
     
-    <!-- Monaco & Pyodide -->
+    <!-- Monaco, Pyodide, JSZip, Prettier -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/parser-html.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/parser-css.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/parser-babel.js"></script>
 </head>
 <body>
 
@@ -36,7 +41,7 @@
     <!-- Mobile Sidebar Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- Top Header (Jo galti se delete ho gaya tha) -->
+    <!-- Top Header -->
     <header class="header">
         <div class="brand">
             <i class="codicon codicon-menu menu-btn" onclick="toggleSidebar()"></i>
@@ -56,9 +61,6 @@
             <div class="act-top">
                 <i class="codicon codicon-files active" title="Explorer"></i>
             </div>
-            <div class="act-bottom">
-                <!-- Extra icons removed for clean UI -->
-            </div>
         </div>
 
         <!-- Sidebar (Explorer) -->
@@ -68,18 +70,22 @@
                 <div class="actions">
                     <i class="codicon codicon-new-file icon-btn" onclick="addNewFile()" title="New File"></i>
                     <i class="codicon codicon-new-folder icon-btn" onclick="addNewFolder()" title="New Folder"></i>
+                    <i class="codicon codicon-cloud-upload icon-btn" onclick="document.getElementById('file-upload').click()" title="Upload Files"></i>
+                    <i class="codicon codicon-archive icon-btn" onclick="downloadProject()" title="Download ZIP"></i>
                 </div>
             </div>
+            <!-- Hidden File Input for Upload -->
+            <input type="file" id="file-upload" multiple style="display: none;" onchange="uploadFiles(event)">
+            
             <div class="file-tree" id="fileTree"></div>
         </div>
 
         <!-- Vertical Resizer -->
         <div class="resizer-v" id="resizer-v"></div>
 
-        <!-- Main Editor Area -->
+        <!-- Main Workspace -->
         <div class="main-workspace">
             <div class="tabs-container" id="fileTabs"></div>
-            
             <div id="editor-container"></div>
 
             <!-- Horizontal Resizer -->
@@ -90,7 +96,9 @@
                 <div class="terminal-tabs">
                     <div class="term-tab active" id="output-title">TERMINAL</div>
                     <div class="term-actions">
-                        <i class="codicon codicon-clear-all icon-btn" onclick="clearOutput()" title="Clear Output"></i>
+                        <i class="codicon codicon-paintcan icon-btn" onclick="formatCode()" title="Format Code (Alt+Shift+F)"></i>
+                        <i class="codicon codicon-link-external icon-btn hidden" id="btn-external" onclick="openPreviewInNewTab()" title="Open Preview in New Tab"></i>
+                        <i class="codicon codicon-clear-all icon-btn" onclick="clearOutput()" title="Clear Output (Ctrl+L)"></i>
                         <i class="codicon codicon-chevron-down icon-btn" onclick="minimizeTerminal()" title="Minimize"></i>
                     </div>
                 </div>

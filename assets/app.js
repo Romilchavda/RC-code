@@ -1,4 +1,4 @@
-// --- Initial Setup & Local Storage (Clean Workspace) ---
+// --- Initial Setup & Local Storage ---
 const defaultFiles = {};
 
 let files = JSON.parse(localStorage.getItem('ide_files_v2')) || defaultFiles;
@@ -10,6 +10,7 @@ let monacoModels = {};
 const terminal = document.getElementById("terminal-output");
 const webPreview = document.getElementById("web-preview");
 const runBtn = document.getElementById("runBtn");
+const btnExternal = document.getElementById("btn-external");
 
 // --- REAL LOGOS ---
 const icons = {
@@ -72,17 +73,13 @@ function showModal(title, type, defaultValue, callback) {
         closeModal();
         if(type === 'input') {
             if(inputEl.value.trim() !== '') callback(inputEl.value.trim());
-        } else {
-            callback(true);
-        }
+        } else { callback(true); }
     };
     
     inputEl.onkeypress = (e) => { if(e.key === 'Enter') confirmBtn.click(); };
 }
 
-function closeModal() {
-    document.getElementById('custom-modal').classList.remove('active');
-}
+function closeModal() { document.getElementById('custom-modal').classList.remove('active'); }
 
 // --- File Explorer ---
 function renderUI() {
@@ -126,12 +123,10 @@ function renderUI() {
 
     if (currentFile) {
         document.getElementById('current-language').innerText = getLanguage(currentFile).toUpperCase();
-        runBtn.innerHTML = `<i class="codicon codicon-play"></i> Run`;
-        runBtn.disabled = false;
+        runBtn.innerHTML = `<i class="codicon codicon-play"></i> Run`; runBtn.disabled = false;
     } else {
         document.getElementById('current-language').innerText = "NONE";
-        runBtn.innerHTML = `No File`;
-        runBtn.disabled = true;
+        runBtn.innerHTML = `No File`; runBtn.disabled = true;
     }
 }
 
@@ -156,31 +151,21 @@ function switchFile(filename) {
         if(filename && monacoModels[filename]) {
             editor.setModel(monacoModels[filename]);
             monaco.editor.setModelLanguage(monacoModels[filename], getLanguage(filename));
-        } else {
-            editor.setModel(null); // Clear editor if no file
-        }
+        } else { editor.setModel(null); }
     }
     renderUI(); saveState();
 }
 
-// --- FILE OPERATIONS ---
+// --- FILE OPERATIONS (Includes New Features) ---
 function addNewFile() {
     showModal("Create New File", "input", "", (name) => {
         if (files[name] === undefined) {
-            files[name] = "";
-            monacoModels[name] = monaco.editor.createModel("", getLanguage(name));
-            openFile(name);
-        } else {
-            showModal("Error", "confirm", "File already exists!", ()=>{});
-        }
+            files[name] = ""; monacoModels[name] = monaco.editor.createModel("", getLanguage(name)); openFile(name);
+        } else { showModal("Error", "confirm", "File already exists!", ()=>{}); }
     });
 }
 
-function addNewFolder() {
-    showModal("Create New Folder", "input", "", (name) => {
-        files[`${name}/.keep`] = ""; renderUI(); saveState();
-    });
-}
+function addNewFolder() { showModal("Create New Folder", "input", "", (name) => { files[`${name}/.keep`] = ""; renderUI(); saveState(); }); }
 
 function deleteFile(filename) {
     showModal("Delete File", "confirm", `Are you sure you want to delete '${filename}'?`, (confirmed) => {
@@ -195,17 +180,62 @@ function deleteFile(filename) {
 function renameFile(oldName) {
     showModal("Rename File", "input", oldName, (newName) => {
         if (newName !== oldName && files[newName] === undefined) {
-            files[newName] = files[oldName];
-            delete files[oldName];
-            monacoModels[newName] = monacoModels[oldName];
-            delete monacoModels[oldName];
+            files[newName] = files[oldName]; delete files[oldName];
+            monacoModels[newName] = monacoModels[oldName]; delete monacoModels[oldName];
             if(openTabs.includes(oldName)) openTabs[openTabs.indexOf(oldName)] = newName;
             if(currentFile === oldName) currentFile = newName;
             renderUI(); saveState();
-        } else if (files[newName] !== undefined) {
-            showModal("Error", "confirm", "File name already exists!", ()=>{});
-        }
+        } else if (files[newName] !== undefined) { showModal("Error", "confirm", "File already exists!", ()=>{}); }
     });
+}
+
+// 🚀 NEW FEATURE: Download Project as ZIP
+async function downloadProject() {
+    if (Object.keys(files).length === 0) { showModal("Error", "confirm", "No files to download!", ()=>{}); return; }
+    const zip = new JSZip();
+    for (const [path, content] of Object.entries(files)) { if (!path.endsWith('.keep')) zip.file(path, content); }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "RC_Code_Project.zip";
+    link.click();
+}
+
+// 🚀 NEW FEATURE: Upload Local Files
+function uploadFiles(event) {
+    const uploadedFiles = event.target.files;
+    if (uploadedFiles.length === 0) return;
+    
+    for (let file of uploadedFiles) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            files[file.name] = e.target.result;
+            if (monacoModels[file.name]) monacoModels[file.name].dispose();
+            monacoModels[file.name] = monaco.editor.createModel(e.target.result, getLanguage(file.name));
+            renderUI(); saveState();
+        };
+        reader.readAsText(file);
+    }
+    event.target.value = ""; // Reset input
+    showModal("Success", "confirm", `${uploadedFiles.length} file(s) uploaded successfully!`, ()=>{});
+}
+
+// 🚀 NEW FEATURE: Code Formatter (Prettier)
+function formatCode() {
+    if (!currentFile || !editor) return;
+    let ext = currentFile.split('.').pop();
+    let content = editor.getValue();
+    try {
+        let formatted = content;
+        if (ext === 'html') formatted = prettier.format(content, { parser: "html", plugins: prettierPlugins });
+        else if (ext === 'css') formatted = prettier.format(content, { parser: "css", plugins: prettierPlugins });
+        else if (ext === 'js') formatted = prettier.format(content, { parser: "babel", plugins: prettierPlugins });
+        else if (ext === 'json') formatted = prettier.format(content, { parser: "json", plugins: prettierPlugins });
+        else if (ext === 'py') { printTerm("Auto-format for Python coming soon!", "text-sys"); return; }
+        
+        editor.setValue(formatted);
+        printTerm(`✔ ${currentFile} formatted successfully!`, "text-succ");
+    } catch (err) { printTerm("❌ Format error: " + err.message, "text-err"); }
 }
 
 // --- Monaco Init ---
@@ -214,61 +244,16 @@ let editor;
 
 require(['vs/editor/editor.main'], function() {
     monaco.editor.defineTheme('vs-dark-custom', { base: 'vs-dark', inherit: true, rules:[], colors: { 'editor.background': '#1e1e1e' }});
-    
-    // Snippets
-    monaco.languages.registerCompletionItemProvider('python', {
-        provideCompletionItems: function(model, position) {
-            const word = model.getWordUntilPosition(position);
-            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
-            return { suggestions:[
-                { label: 'def', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'def ${1:function_name}(${2:args}):\n\t${3:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Create a function', range: range },
-                { label: 'class', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'class ${1:ClassName}:\n\tdef __init__(self):\n\t\t${2:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Create a class', range: range },
-                { label: 'for', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'for ${1:item} in ${2:iterable}:\n\t${3:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'For loop', range: range },
-                { label: 'print', kind: monaco.languages.CompletionItemKind.Function, insertText: 'print(${1:value})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Print output', range: range }
-            ]};
-        }
-    });
-
-    monaco.languages.registerCompletionItemProvider('html', {
-        provideCompletionItems: function(model, position) {
-            const word = model.getWordUntilPosition(position);
-            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
-            return { suggestions:[
-                { label: '!', kind: monaco.languages.CompletionItemKind.Snippet, insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>${1:Document}</title>\n</head>\n<body>\n\t${2}\n</body>\n</html>', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'HTML5 Boilerplate', range: range }
-            ]};
-        }
-    });
-
-    monaco.languages.registerCompletionItemProvider('css', {
-        provideCompletionItems: function(model, position) {
-            const word = model.getWordUntilPosition(position);
-            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
-            return { suggestions:[
-                { label: 'reset', kind: monaco.languages.CompletionItemKind.Snippet, insertText: '* {\n\tmargin: 0;\n\tpadding: 0;\n\tbox-sizing: border-box;\n}\n\nbody {\n\tfont-family: sans-serif;\n\t${1}\n}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Basic CSS Reset', range: range }
-            ]};
-        }
-    });
-
     Object.keys(files).forEach(f => { monacoModels[f] = monaco.editor.createModel(files[f], getLanguage(f)); });
 
     editor = monaco.editor.create(document.getElementById('editor-container'), {
-        theme: 'vs-dark-custom', 
-        automaticLayout: true, 
-        wordWrap: 'on', 
-        fontSize: 14, 
-        fontFamily: "'JetBrains Mono', monospace", 
-        minimap: { enabled: false },
-        suggestSelection: 'first',
-        acceptSuggestionOnEnter: 'on', 
-        quickSuggestions: { other: true, comments: false, strings: true },
-        mouseWheelZoom: true
+        theme: 'vs-dark-custom', automaticLayout: true, wordWrap: 'on', fontSize: 14, 
+        fontFamily: "'JetBrains Mono', monospace", minimap: { enabled: false },
+        suggestSelection: 'first', acceptSuggestionOnEnter: 'on', 
+        quickSuggestions: { other: true, comments: false, strings: true }, mouseWheelZoom: true
     });
 
-    if(currentFile && monacoModels[currentFile]) {
-        editor.setModel(monacoModels[currentFile]);
-    } else {
-        editor.setModel(null);
-    }
+    if(currentFile && monacoModels[currentFile]) editor.setModel(monacoModels[currentFile]);
 
     editor.onDidChangeModelContent(() => { 
         if(currentFile) { files[currentFile] = editor.getValue(); saveState(); }
@@ -278,13 +263,9 @@ require(['vs/editor/editor.main'], function() {
         document.getElementById("cursor-position").innerText = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
     });
 
-    // MOBILE TOUCH FIX FOR SUGGESTIONS
     document.addEventListener('touchend', (e) => {
         let suggestItem = e.target.closest('.monaco-list-row');
-        if (suggestItem) {
-            e.preventDefault(); 
-            suggestItem.click(); 
-        }
+        if (suggestItem) { e.preventDefault(); suggestItem.click(); }
     }, { passive: false });
     
     renderUI();
@@ -300,6 +281,23 @@ function minimizeTerminal() {
     let term = document.getElementById("terminal-container");
     term.style.height = term.style.height === "30px" ? "30%" : "30px";
     setTimeout(() => { if(editor) editor.layout(); }, 300);
+}
+
+// 🚀 NEW FEATURE: Open Preview In New Tab
+function openPreviewInNewTab() {
+    if (!currentFile || (getLanguage(currentFile) !== 'html' && getLanguage(currentFile) !== 'css')) return;
+    let htmlContent = files[currentFile];
+    if (currentFile.endsWith('.html')) {
+        if(files['style.css']) htmlContent = htmlContent.replace('</head>', `<style>${files['style.css']}</style></head>`);
+        if(files['app.js'] || files['script.js']) {
+           let jsName = files['app.js'] ? 'app.js' : 'script.js';
+           htmlContent = htmlContent.replace('</body>', `<script>${files[jsName]}</script></body>`);
+        }
+    } else { htmlContent = files['index.html'].replace('</head>', `<style>${files[currentFile]}</style></head>`); }
+    
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
 }
 
 let pyodideReadyPromise;
@@ -320,17 +318,18 @@ async function runCode() {
     let title = document.getElementById("output-title");
 
     if (ext === 'py') {
-        terminal.classList.remove('hidden'); webPreview.classList.add('hidden'); title.innerText = "TERMINAL - PYTHON";
-        printTerm(`\n> python ${currentFile}`, "text-sys");
+        terminal.classList.remove('hidden'); webPreview.classList.add('hidden'); btnExternal.classList.add('hidden');
+        title.innerText = "TERMINAL - PYTHON"; printTerm(`\n> python ${currentFile}`, "text-sys");
         try {
             let pyodide = await pyodideReadyPromise;
-            if(!pyodide) throw new Error("Python Engine is still loading. Please wait a second and try again.");
+            if(!pyodide) throw new Error("Python Engine is loading.");
             for (const[n, c] of Object.entries(files)) { pyodide.FS.writeFile(n, c); }
             await pyodide.runPythonAsync(files[currentFile]);
         } catch (err) { printTerm(err.toString(), "text-err"); }
         
     } else if (ext === 'html' || ext === 'css') {
-        terminal.classList.add('hidden'); webPreview.classList.remove('hidden'); title.innerText = "WEB PREVIEW";
+        terminal.classList.add('hidden'); webPreview.classList.remove('hidden'); btnExternal.classList.remove('hidden');
+        title.innerText = "WEB PREVIEW";
         let htmlContent = files[currentFile];
         if(ext === 'html') {
             if(files['style.css']) htmlContent = htmlContent.replace('</head>', `<style>${files['style.css']}</style></head>`);
@@ -339,88 +338,52 @@ async function runCode() {
         webPreview.srcdoc = htmlContent;
 
     } else if (ext === 'js') {
-        terminal.classList.remove('hidden'); webPreview.classList.add('hidden'); title.innerText = "TERMINAL - NODE";
-        printTerm(`\n> node ${currentFile}`, "text-sys");
+        terminal.classList.remove('hidden'); webPreview.classList.add('hidden'); btnExternal.classList.add('hidden');
+        title.innerText = "TERMINAL - NODE"; printTerm(`\n> node ${currentFile}`, "text-sys");
         let oldLog = console.log; console.log = function(...a) { printTerm(a.join(' ')); oldLog.apply(console, a); };
         try { eval(files[currentFile]); } catch (err) { printTerm(err.toString(), "text-err"); }
         console.log = oldLog;
 
     } else if (ext === 'json') {
-        terminal.classList.remove('hidden'); webPreview.classList.add('hidden'); title.innerText = "TERMINAL - JSON";
-        printTerm(`\n> Validating ${currentFile}...`, "text-sys");
-        try {
-            let parsed = JSON.parse(files[currentFile]);
-            printTerm("✔ JSON is Valid!\n", "text-succ");
-            printTerm(JSON.stringify(parsed, null, 2));
+        terminal.classList.remove('hidden'); webPreview.classList.add('hidden'); btnExternal.classList.add('hidden');
+        title.innerText = "TERMINAL - JSON"; printTerm(`\n> Validating ${currentFile}...`, "text-sys");
+        try { let parsed = JSON.parse(files[currentFile]); printTerm("✔ JSON is Valid!\n", "text-succ"); printTerm(JSON.stringify(parsed, null, 2));
         } catch (err) { printTerm("❌ Invalid JSON Format!\n" + err.toString(), "text-err"); }
     }
     
     runBtn.innerHTML = `<i class="codicon codicon-play"></i> Run`; runBtn.disabled = false;
 }
 
-// --- NEW FIX: MOBILE TOGGLE LOGIC ---
+// --- MOBILE TOGGLE & RESIZE LOGIC ---
 function toggleSidebar() {
-    let sidebar = document.getElementById('sidebar');
-    let overlay = document.getElementById('mobile-overlay');
-    
-    if(window.innerWidth <= 768) {
-        sidebar.classList.toggle('mobile-active');
-        overlay.classList.toggle('active');
-    } else {
-        // Desktop par agar sidebar band karna ho tabhi
+    let sidebar = document.getElementById('sidebar'); let overlay = document.getElementById('mobile-overlay');
+    if(window.innerWidth <= 768) { sidebar.classList.toggle('mobile-active'); overlay.classList.toggle('active'); }
+    else {
         sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
         document.getElementById('resizer-v').style.display = sidebar.style.display === 'none' ? 'none' : 'block';
     }
     setTimeout(() => { if(editor) editor.layout(); }, 300);
 }
 
-// --- NEW FIX: WINDOW RESIZE HANDLER ---
-// Ye code device rotate karne par ya window size change karne par bugs fix karega
 window.addEventListener('resize', () => {
-    let sidebar = document.getElementById('sidebar');
-    let overlay = document.getElementById('mobile-overlay');
-
-    if (window.innerWidth > 768) {
-        sidebar.classList.remove('mobile-active');
-        overlay.classList.remove('active');
-        sidebar.style.display = 'flex'; // Reset for desktop
-        document.getElementById('resizer-v').style.display = 'block';
-    } else {
-        sidebar.style.display = ''; // Clear inline styles for mobile
-        document.getElementById('resizer-v').style.display = '';
-    }
-    
-    if (editor) {
-        setTimeout(() => editor.layout(), 100);
-    }
+    let sidebar = document.getElementById('sidebar'); let overlay = document.getElementById('mobile-overlay');
+    if (window.innerWidth > 768) { sidebar.classList.remove('mobile-active'); overlay.classList.remove('active'); sidebar.style.display = 'flex'; document.getElementById('resizer-v').style.display = 'block'; }
+    else { sidebar.style.display = ''; document.getElementById('resizer-v').style.display = ''; }
+    if (editor) setTimeout(() => editor.layout(), 100);
 });
 
-// --- NEW FEATURE: DRAG TO RESIZE (PC) ---
-const resizerV = document.getElementById('resizer-v');
-let isResizingV = false;
+// Resizers Logic (PC)
+let isResizingV = false; document.getElementById('resizer-v').addEventListener('mousedown', () => { isResizingV = true; document.body.style.cursor = 'col-resize'; });
+document.addEventListener('mousemove', (e) => { if (isResizingV) { let w = e.clientX - 48; if (w > 150 && w < 500) document.getElementById('sidebar').style.width = w + 'px'; } });
+document.addEventListener('mouseup', () => { if (isResizingV) { isResizingV = false; document.body.style.cursor = 'default'; if(editor) editor.layout(); } });
 
-resizerV.addEventListener('mousedown', () => { isResizingV = true; document.body.style.cursor = 'col-resize'; });
-document.addEventListener('mousemove', (e) => {
-    if (!isResizingV) return;
-    let newWidth = e.clientX - 48; // 48 is activity bar width
-    if (newWidth > 150 && newWidth < 500) { document.getElementById('sidebar').style.width = newWidth + 'px'; }
-});
-document.addEventListener('mouseup', () => {
-    if (isResizingV) { isResizingV = false; document.body.style.cursor = 'default'; if(editor) editor.layout(); }
-});
+let isResizingH = false; document.getElementById('resizer-h').addEventListener('mousedown', () => { isResizingH = true; document.body.style.cursor = 'row-resize'; });
+document.addEventListener('mousemove', (e) => { if (isResizingH) { let h = window.innerHeight - e.clientY - 22; if (h > 100 && h < window.innerHeight * 0.8) document.getElementById('terminal-container').style.height = h + 'px'; } });
+document.addEventListener('mouseup', () => { if (isResizingH) { isResizingH = false; document.body.style.cursor = 'default'; if(editor) editor.layout(); } });
 
-const resizerH = document.getElementById('resizer-h');
-let isResizingH = false;
-
-resizerH.addEventListener('mousedown', () => { isResizingH = true; document.body.style.cursor = 'row-resize'; });
-document.addEventListener('mousemove', (e) => {
-    if (!isResizingH) return;
-    let newHeight = window.innerHeight - e.clientY - 22; // 22 is status bar height
-    if (newHeight > 100 && newHeight < window.innerHeight * 0.8) { document.getElementById('terminal-container').style.height = newHeight + 'px'; }
+// 🚀 Keyboard Shortcuts Map
+document.addEventListener('keydown', (e) => { 
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); runCode(); } // Save to Run
+    if ((e.ctrlKey || e.metaKey) && e.key === 'l') { e.preventDefault(); clearOutput(); } // Clear Terminal
+    if (e.altKey && e.shiftKey && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); formatCode(); } // Format Code
 });
-document.addEventListener('mouseup', () => {
-    if (isResizingH) { isResizingH = false; document.body.style.cursor = 'default'; if(editor) editor.layout(); }
-});
-
-// Save shortcut mapping
-document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); runCode(); } });
