@@ -8,7 +8,7 @@
     <!-- External CSS -->
     <link rel="stylesheet" href="assets/style.css">
     
-    <!-- Premium Fonts & VS Code Icons -->
+    <!-- Premium Fonts & VS Code Icons (For UI elements) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" rel="stylesheet">
     
@@ -17,6 +17,24 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 </head>
 <body>
+
+    <!-- Premium Custom Modal (Popup) -->
+    <div class="modal-overlay" id="custom-modal">
+        <div class="modal-box">
+            <div class="modal-header" id="modal-title">Title</div>
+            <div class="modal-body">
+                <input type="text" id="modal-input" class="modal-input" placeholder="Type here..." autocomplete="off">
+                <p id="modal-message" class="modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" id="modal-confirm-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
 
     <!-- Top Header -->
     <header class="header">
@@ -34,7 +52,7 @@
 
     <div class="app-body">
         <!-- Activity Bar -->
-        <div class="activity-bar">
+        <div class="activity-bar" id="activity-bar">
             <div class="act-top">
                 <i class="codicon codicon-files active"></i>
                 <i class="codicon codicon-search"></i>
@@ -87,17 +105,14 @@
     <!-- Status Bar -->
     <footer class="status-bar">
         <div class="status-left">
-            <span id="pyodide-status"><i class="codicon codicon-sync codicon-modifier-spin"></i> Engine Loading...</span>
+            <span id="pyodide-status"><i class="codicon codicon-sync codicon-modifier-spin"></i> Loading...</span>
         </div>
         <div class="status-right">
             <span id="cursor-position">Ln 1, Col 1</span>
             <span id="current-language">Python</span>
-            <span>UTF-8</span>
-            <span>Prettier</span>
         </div>
     </footer>
 
-    <!-- External JS -->
     <script src="assets/app.js"></script>
 </body>
 </html>
