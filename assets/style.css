@@ -105,10 +105,9 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-editor); col
 
 /* --- Monaco Mobile Suggestion Tap Fix --- */
 .monaco-editor .suggest-widget {
-    z-index: 9999 !important;
-    touch-action: none; /* Prevents scroll conflict on mobile */
+    z-index: 99999 !important;
 }
 .monaco-editor .suggest-widget .monaco-list-row {
     cursor: pointer !important;
-    padding: 2px 0;
+    pointer-events: auto !important;
 }

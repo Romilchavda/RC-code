@@ -17,13 +17,13 @@ const terminal = document.getElementById("terminal-output");
 const webPreview = document.getElementById("web-preview");
 const runBtn = document.getElementById("runBtn");
 
-// --- REAL LOGOS ---
+// --- REAL LOGOS (Fixed JSON Logo with VS Code Official Icon) ---
 const icons = {
     py: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
     html: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg",
     css: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg",
     js: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg",
-    json: "https://www.svgrepo.com/show/452253/json.svg", // Fixed JSON Logo
+    json: "https://cdn.jsdelivr.net/gh/vscode-icons/vscode-icons@master/icons/file_type_json.svg", // 100% Working VS Code JSON Icon
     folder: "https://www.svgrepo.com/show/448222/folder.svg",
     default: "https://www.svgrepo.com/show/448225/file.svg"
 };
@@ -154,9 +154,8 @@ function switchFile(filename) {
     renderUI(); saveState();
 }
 
-// --- FILE OPERATIONS (Fixed default names) ---
+// --- FILE OPERATIONS ---
 function addNewFile() {
-    // Empty default value passed here ""
     showModal("Create New File", "input", "", (name) => {
         if (!files[name]) {
             files[name] = "";
@@ -169,7 +168,6 @@ function addNewFile() {
 }
 
 function addNewFolder() {
-    // Empty default value passed here ""
     showModal("Create New Folder", "input", "", (name) => {
         files[`${name}/.keep`] = ""; renderUI(); saveState();
     });
@@ -199,28 +197,13 @@ function renameFile(oldName) {
     });
 }
 
-// --- Monaco Init (Mobile Touch & Suggestions Fix) ---
+// --- Monaco Init ---
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
 let editor;
 
 require(['vs/editor/editor.main'], function() {
     monaco.editor.defineTheme('vs-dark-custom', { base: 'vs-dark', inherit: true, rules:[], colors: { 'editor.background': '#1e1e1e' }});
     
-    // Custom Snippets for Python
-    monaco.languages.registerCompletionItemProvider('python', {
-        provideCompletionItems: function(model, position) {
-            const word = model.getWordUntilPosition(position);
-            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
-            const suggestions =[
-                { label: 'def', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'def ${1:function_name}(${2:args}):\n\t${3:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Create a function', range: range },
-                { label: 'class', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'class ${1:ClassName}:\n\tdef __init__(self):\n\t\t${2:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Create a class', range: range },
-                { label: 'for', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'for ${1:item} in ${2:iterable}:\n\t${3:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'For loop', range: range },
-                { label: 'print', kind: monaco.languages.CompletionItemKind.Function, insertText: 'print(${1:value})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Print output', range: range }
-            ];
-            return { suggestions: suggestions };
-        }
-    });
-
     Object.keys(files).forEach(f => { monacoModels[f] = monaco.editor.createModel(files[f], getLanguage(f)); });
 
     editor = monaco.editor.create(document.getElementById('editor-container'), {
@@ -230,14 +213,9 @@ require(['vs/editor/editor.main'], function() {
         fontSize: 14, 
         fontFamily: "'JetBrains Mono', monospace", 
         minimap: { enabled: false },
-        // --- MOBILE TOUCH CONFIG ---
         suggestSelection: 'first',
-        acceptSuggestionOnEnter: 'on', // Pressing Enter accepts suggestion
-        acceptSuggestionOnCommitCharacter: true,
-        snippetSuggestions: 'top',
-        tabCompletion: "on",
-        quickSuggestions: { other: true, comments: false, strings: true },
-        mouseWheelZoom: true
+        acceptSuggestionOnEnter: 'on',
+        quickSuggestions: true
     });
 
     if(currentFile && monacoModels[currentFile]) editor.setModel(monacoModels[currentFile]);
@@ -249,8 +227,16 @@ require(['vs/editor/editor.main'], function() {
     editor.onDidChangeCursorPosition((e) => {
         document.getElementById("cursor-position").innerText = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
     });
+
+    // 🔥 MOBILE TOUCH FIX FOR SUGGESTIONS (The Magic Bullet) 🔥
+    document.addEventListener('touchend', (e) => {
+        let suggestItem = e.target.closest('.monaco-list-row');
+        if (suggestItem) {
+            e.preventDefault(); // Roks editor from blurring/closing keyboard
+            suggestItem.click(); // Zabardasti tap (click) trigger karta hai
+        }
+    }, { passive: false });
     
-    // Enable run button immediately for HTML/CSS/JSON
     runBtn.disabled = false;
     runBtn.innerHTML = `<i class="codicon codicon-play"></i> Run`;
     renderUI();
