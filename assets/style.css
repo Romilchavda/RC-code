@@ -7,46 +7,28 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* 🚨 FIX: Prevents layout from cutting off at the top 🚨 */
+/* 🚨 FIX: BULLETPROOF ABSOLUTE LAYOUT (Like Real VS Code) 🚨 */
 html, body { 
-    height: 100dvh; /* Mobile browser bug fix */
-    width: 100%;
+    width: 100%; 
+    height: 100%; 
+    overflow: hidden; 
     font-family: 'Inter', sans-serif; 
     background-color: var(--bg-editor); 
     color: var(--text-main); 
-    display: flex; 
-    flex-direction: column; 
-    overflow: hidden; 
-    position: fixed; /* Locks the page from unwanted browser scrolling */
-    top: 0; left: 0; bottom: 0; right: 0;
+    position: relative; 
+    /* Yahan se Flexbox aur Fixed hata diya taaki Android browser ise push na kar paye */
 }
 
-/* Custom Modal Styles (Premium Popup) */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
-.modal-overlay.active { display: flex; }
-.modal-box { background: var(--bg-sidebar); width: 320px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; transform: scale(0.95); animation: popIn 0.2s forwards; }
-@keyframes popIn { to { transform: scale(1); } }
-.modal-header { padding: 12px 16px; font-weight: 600; font-size: 13px; background: var(--bg-activity); border-bottom: 1px solid var(--border-color); }
-.modal-body { padding: 16px; }
-.modal-input { width: 100%; padding: 8px 10px; background: var(--bg-editor); border: 1px solid var(--accent-blue); color: white; border-radius: 4px; outline: none; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
-.modal-message { font-size: 13px; color: var(--text-main); line-height: 1.4; }
-.modal-footer { padding: 10px 16px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); }
-.btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 14px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-.btn-cancel:hover { background: var(--hover-bg); color: white; }
-.btn-confirm { background: var(--accent-blue); border: none; color: white; padding: 6px 14px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: 500; }
-.btn-confirm:hover { background: #005f9e; }
-
-/* Real Image Icons */
-.item-icon { width: 16px; height: 16px; object-fit: contain; }
-
-/* Scrollbars */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #464646; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #555555; }
-
-/* Header */
-.header { background-color: var(--bg-activity); height: 40px; min-height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid var(--border-color); width: 100%; z-index: 100; }
+/* 1. Header (Fixed Exactly at Top) */
+.header { 
+    position: absolute; 
+    top: 0; left: 0; right: 0; 
+    height: 40px; 
+    background-color: var(--bg-activity); 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 0 16px; border-bottom: 1px solid var(--border-color); 
+    z-index: 200; 
+}
 .brand { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 14px; }
 .menu-btn { cursor: pointer; font-size: 18px; color: var(--text-main); }
 .header-actions { display: flex; align-items: center; gap: 12px; }
@@ -54,13 +36,33 @@ html, body {
 .btn-run { background-color: var(--accent-green); color: white; border: none; height: 26px; padding: 0 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 .btn-run:disabled { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); cursor: not-allowed; }
 
-/* Main Layout */
-.app-body { display: flex; flex: 1; min-height: 0; overflow: hidden; position: relative; width: 100%; }
+/* 2. Status Bar (Fixed Exactly at Bottom) */
+.status-bar { 
+    position: absolute; 
+    bottom: 0; left: 0; right: 0; 
+    height: 22px; 
+    background: var(--bg-statusbar); color: white; 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 10px; font-size: 12px; 
+    z-index: 200; 
+}
+.status-left, .status-right { display: flex; gap: 15px; align-items: center; }
+
+/* 3. Main App Body (Perfectly fit between Header and Status Bar) */
+.app-body { 
+    position: absolute; 
+    top: 40px; /* Header ke theek neeche */
+    bottom: 22px; /* Status bar ke theek upar */
+    left: 0; right: 0; 
+    display: flex; 
+    overflow: hidden; 
+}
+
+/* Sidebar & Activity Bar */
 .activity-bar { width: 48px; background: var(--bg-activity); display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 10px 0; z-index: 10; flex-shrink: 0; }
 .activity-bar i { font-size: 24px; color: var(--text-muted); margin-bottom: 20px; cursor: pointer; }
 .activity-bar i.active, .activity-bar i:hover { color: white; }
 
-/* Sidebar */
 .sidebar { width: 250px; background: var(--bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; z-index: 100; transition: left 0.3s ease; }
 .section-header { padding: 10px 16px; font-size: 11px; font-weight: 600; color: white; display: flex; justify-content: space-between; align-items: center; }
 .icon-btn { cursor: pointer; font-size: 16px; color: var(--text-muted); transition: 0.2s; }
@@ -79,7 +81,7 @@ html, body {
 .resizer-v { width: 4px; background: var(--bg-sidebar); cursor: col-resize; z-index: 10; border-right: 1px solid var(--border-color); flex-shrink: 0; }
 .resizer-h { height: 4px; background: var(--bg-editor); cursor: row-resize; z-index: 10; border-top: 1px solid var(--border-color); flex-shrink: 0; }
 
-/* Workspace */
+/* Workspace & Editor */
 .main-workspace { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg-editor); overflow: hidden; }
 .tabs-container { display: flex; background: var(--bg-tabs); overflow-x: auto; height: 35px; white-space: nowrap; flex-shrink: 0; }
 .tab { padding: 0 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap:6px; border-right: 1px solid var(--border-color); }
@@ -87,7 +89,6 @@ html, body {
 .tab-close { font-size: 12px; padding: 2px; border-radius: 3px; }
 .tab-close:hover { background: rgba(255,255,255,0.1); color: white; }
 
-/* Editor Container */
 #editor-container { flex: 1; min-height: 0; width: 100%; height: 100%; position: relative; overflow: hidden; }
 
 /* Terminal */
@@ -100,19 +101,28 @@ html, body {
 .hidden { display: none !important; }
 .text-sys { color: var(--accent-blue); } .text-err { color: var(--danger); } .text-succ { color: var(--accent-green); }
 
-/* Status Bar */
-.status-bar { height: 22px; flex-shrink: 0; background: var(--bg-statusbar); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 12px; z-index: 20; width: 100%; }
-.status-left, .status-right { display: flex; gap: 15px; align-items: center; }
+/* Custom Modal Styles */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.modal-overlay.active { display: flex; }
+.modal-box { background: var(--bg-sidebar); width: 320px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; transform: scale(0.95); animation: popIn 0.2s forwards; }
+@keyframes popIn { to { transform: scale(1); } }
+.modal-header { padding: 12px 16px; font-weight: 600; font-size: 13px; background: var(--bg-activity); border-bottom: 1px solid var(--border-color); }
+.modal-body { padding: 16px; }
+.modal-input { width: 100%; padding: 8px 10px; background: var(--bg-editor); border: 1px solid var(--accent-blue); color: white; border-radius: 4px; outline: none; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+.modal-message { font-size: 13px; color: var(--text-main); line-height: 1.4; }
+.modal-footer { padding: 10px 16px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); }
+.btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 14px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+.btn-cancel:hover { background: var(--hover-bg); color: white; }
+.btn-confirm { background: var(--accent-blue); border: none; color: white; padding: 6px 14px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: 500; }
+.btn-confirm:hover { background: #005f9e; }
+.item-icon { width: 16px; height: 16px; object-fit: contain; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #464646; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #555555; }
 
-/* --- DESKTOP / LARGE SCREEN RESPONSIVENESS --- */
-@media (min-width: 769px) {
-    .menu-btn { display: none !important; } 
-    .sidebar { position: relative !important; top: 0 !important; left: 0 !important; height: 100% !important; box-shadow: none !important; }
-    .mobile-overlay { display: none !important; } 
-}
-
-/* --- MOBILE RESPONSIVENESS --- */
-.mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
+/* --- MOBILE RESPONSIVENESS (PERFECTED) --- */
+.mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 140; backdrop-filter: blur(2px); }
 
 @media (max-width: 768px) {
     .activity-bar { display: none !important; } 
@@ -120,17 +130,24 @@ html, body {
     .resizer-v, .resizer-h { display: none !important; }
     
     .sidebar { 
-        position: fixed !important; 
-        top: 40px; 
+        position: absolute !important; /* Ab yeh absolute hai app-body ke andar */
+        top: 0 !important; 
         left: -260px; 
-        height: calc(100% - 62px) !important; 
+        height: 100% !important; /* Perfect height bina kisi 'calc' bug ke */
         box-shadow: 4px 0 10px rgba(0,0,0,0.5); 
         transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 150;
     }
     .sidebar.mobile-active { left: 0 !important; }
     .mobile-overlay.active { display: block !important; }
-    
     .terminal-container { height: 35%; }
+}
+
+/* --- DESKTOP / LARGE SCREEN RESPONSIVENESS --- */
+@media (min-width: 769px) {
+    .menu-btn { display: none !important; } 
+    .sidebar { position: relative !important; left: 0 !important; height: 100% !important; box-shadow: none !important; }
+    .mobile-overlay { display: none !important; } 
 }
 
 /* --- Monaco Mobile Suggestion Tap Fix --- */
