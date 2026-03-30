@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,8 +17,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 </head>
-<body>
 
+<body>
+    
     <!-- Premium Custom Modal (Popup) -->
     <div class="modal-overlay" id="custom-modal">
         <div class="modal-box">
@@ -32,10 +34,10 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Mobile Sidebar Overlay -->
     <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
-
+    
     <!-- Top Header -->
     <header class="header">
         <div class="brand">
@@ -49,20 +51,18 @@
             </button>
         </div>
     </header>
-
+    
     <div class="app-body">
         <!-- Activity Bar -->
         <div class="activity-bar" id="activity-bar">
             <div class="act-top">
-                <i class="codicon codicon-files active"></i>
-                <i class="codicon codicon-search"></i>
-                <i class="codicon codicon-source-control"></i>
+                <i class="codicon codicon-files active" title="Explorer"></i>
             </div>
             <div class="act-bottom">
-                <i class="codicon codicon-settings-gear"></i>
+                <!-- Extra icons removed for clean UI -->
             </div>
         </div>
-
+        
         <!-- Sidebar (Explorer) -->
         <div class="sidebar" id="sidebar">
             <div class="section-header">
@@ -74,19 +74,19 @@
             </div>
             <div class="file-tree" id="fileTree"></div>
         </div>
-
+        
         <!-- Vertical Resizer -->
         <div class="resizer-v" id="resizer-v"></div>
-
+        
         <!-- Main Editor Area -->
         <div class="main-workspace">
             <div class="tabs-container" id="fileTabs"></div>
             
             <div id="editor-container"></div>
-
+            
             <!-- Horizontal Resizer -->
             <div class="resizer-h" id="resizer-h"></div>
-
+            
             <!-- Terminal / Output -->
             <div class="terminal-container" id="terminal-container">
                 <div class="terminal-tabs">
@@ -101,7 +101,7 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Status Bar -->
     <footer class="status-bar">
         <div class="status-left">
@@ -112,7 +112,8 @@
             <span id="current-language">Python</span>
         </div>
     </footer>
-
+    
     <script src="assets/app.js"></script>
 </body>
+
 </html>
