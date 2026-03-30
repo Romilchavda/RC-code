@@ -1,15 +1,11 @@
-// --- Initial Setup & Local Storage ---
-const defaultFiles = {
-    "main.py": "print('🚀 Welcome to Ultimate Pro IDE!')\n",
-    "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <h1>🌐 HTML/CSS Preview Works!</h1>\n</body>\n</html>",
-    "style.css": "body { background: #1e1e1e; color: #58a6ff; text-align: center; font-family: sans-serif; }",
-    "script.js": "console.log('JS is running natively!');",
-    "package.json": "{\n  \"name\": \"ultimate-ide\",\n  \"version\": \"1.0.0\"\n}"
-};
+// --- Initial Setup & Local Storage (Clean Workspace) ---
+// Default files ko ekdum empty kar diya gaya hai
+const defaultFiles = {};
 
-let files = JSON.parse(localStorage.getItem('ide_files')) || defaultFiles;
-let currentFile = localStorage.getItem('ide_currentFile') || "main.py";
-let openTabs = JSON.parse(localStorage.getItem('ide_openTabs')) ||["main.py", "index.html"];
+// Naye LocalStorage keys taaki purani default files dobara load na ho
+let files = JSON.parse(localStorage.getItem('ide_files_v2')) || defaultFiles;
+let currentFile = localStorage.getItem('ide_currentFile_v2') || null;
+let openTabs = JSON.parse(localStorage.getItem('ide_openTabs_v2')) ||[];
 let monacoModels = {};
 
 // UI Elements
@@ -17,19 +13,19 @@ const terminal = document.getElementById("terminal-output");
 const webPreview = document.getElementById("web-preview");
 const runBtn = document.getElementById("runBtn");
 
-// --- REAL LOGOS (100% Fail-Proof Embedded JSON Logo) ---
+// --- REAL LOGOS ---
 const icons = {
     py: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
     html: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg",
     css: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg",
     js: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg",
-    // JSON icon is now hardcoded directly so it NEVER breaks!
     json: "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F5DE19'%3E%3Cpath d='M9.5 3H7.4c-1.2 0-2 .8-2 2v4.1c0 1.2-.8 2-2 2h-.8v1.8h.8c1.2 0 2 .8 2 2V19c0 1.2.8 2 2 2h2.1v-1.8H7.4c-.2 0-.4-.2-.4-.4v-4.1c0-1.8-1.2-3-3-3 1.8 0 3-1.2 3-3V4.6c0-.2.2-.4.4-.4h2.1V3zm5 0v1.8h2.1c.2 0 .4.2.4.4v4.1c0 1.8 1.2 3 3 3-1.8 0-3 1.2-3 3V19c0 .2-.2.4-.4.4h-2.1V21h2.1c1.2 0 2-.8 2-2v-4.1c0-1.2.8-2 2-2h.8v-1.8h-.8c-1.2 0-2-.8-2-2V5c0-1.2-.8-2-2-2h-2.1z'/%3E%3C/svg%3E",
     folder: "https://www.svgrepo.com/show/448222/folder.svg",
     default: "https://www.svgrepo.com/show/448225/file.svg"
 };
 
 function getIcon(filename) {
+    if(!filename) return icons.default;
     if(filename.endsWith('.py')) return icons.py;
     if(filename.endsWith('.html')) return icons.html;
     if(filename.endsWith('.css')) return icons.css;
@@ -40,6 +36,7 @@ function getIcon(filename) {
 }
 
 function getLanguage(filename) {
+    if(!filename) return 'plaintext';
     if(filename.endsWith('.py')) return 'python';
     if(filename.endsWith('.html')) return 'html';
     if(filename.endsWith('.css')) return 'css';
@@ -49,9 +46,9 @@ function getLanguage(filename) {
 }
 
 function saveState() {
-    localStorage.setItem('ide_files', JSON.stringify(files));
-    localStorage.setItem('ide_currentFile', currentFile);
-    localStorage.setItem('ide_openTabs', JSON.stringify(openTabs));
+    localStorage.setItem('ide_files_v2', JSON.stringify(files));
+    localStorage.setItem('ide_currentFile_v2', currentFile);
+    localStorage.setItem('ide_openTabs_v2', JSON.stringify(openTabs));
 }
 
 // --- CUSTOM PREMIUM MODAL ---
@@ -116,7 +113,8 @@ function renderUI() {
     });
 
     openTabs.forEach(filename => {
-        if(!files[filename]) return; 
+        if(files[filename] === undefined) return; 
+
         let displayName = filename.includes('/') ? filename.split('/')[1] : filename;
         let tab = document.createElement('div');
         tab.className = `tab ${filename === currentFile ? 'active' : ''}`;
@@ -128,7 +126,15 @@ function renderUI() {
         fileTabs.appendChild(tab);
     });
 
-    if (currentFile) document.getElementById('current-language').innerText = getLanguage(currentFile).toUpperCase();
+    if (currentFile) {
+        document.getElementById('current-language').innerText = getLanguage(currentFile).toUpperCase();
+        runBtn.innerHTML = `<i class="codicon codicon-play"></i> Run`;
+        runBtn.disabled = false;
+    } else {
+        document.getElementById('current-language').innerText = "NONE";
+        runBtn.innerHTML = `No File`;
+        runBtn.disabled = true;
+    }
 }
 
 function openFile(filename) {
@@ -148,9 +154,13 @@ function closeTab(filename) {
 
 function switchFile(filename) {
     currentFile = filename;
-    if(editor && monacoModels[filename]) {
-        editor.setModel(monacoModels[filename]);
-        monaco.editor.setModelLanguage(monacoModels[filename], getLanguage(filename));
+    if(editor) {
+        if(filename && monacoModels[filename]) {
+            editor.setModel(monacoModels[filename]);
+            monaco.editor.setModelLanguage(monacoModels[filename], getLanguage(filename));
+        } else {
+            editor.setModel(null); // Clear editor if no file
+        }
     }
     renderUI(); saveState();
 }
@@ -158,7 +168,7 @@ function switchFile(filename) {
 // --- FILE OPERATIONS ---
 function addNewFile() {
     showModal("Create New File", "input", "", (name) => {
-        if (!files[name]) {
+        if (files[name] === undefined) {
             files[name] = "";
             monacoModels[name] = monaco.editor.createModel("", getLanguage(name));
             openFile(name);
@@ -186,7 +196,7 @@ function deleteFile(filename) {
 
 function renameFile(oldName) {
     showModal("Rename File", "input", oldName, (newName) => {
-        if (newName !== oldName && !files[newName]) {
+        if (newName !== oldName && files[newName] === undefined) {
             files[newName] = files[oldName];
             delete files[oldName];
             monacoModels[newName] = monacoModels[oldName];
@@ -194,6 +204,8 @@ function renameFile(oldName) {
             if(openTabs.includes(oldName)) openTabs[openTabs.indexOf(oldName)] = newName;
             if(currentFile === oldName) currentFile = newName;
             renderUI(); saveState();
+        } else if (files[newName] !== undefined) {
+            showModal("Error", "confirm", "File name already exists!", ()=>{});
         }
     });
 }
@@ -205,6 +217,43 @@ let editor;
 require(['vs/editor/editor.main'], function() {
     monaco.editor.defineTheme('vs-dark-custom', { base: 'vs-dark', inherit: true, rules:[], colors: { 'editor.background': '#1e1e1e' }});
     
+    // 🔥 1. Python Snippets
+    monaco.languages.registerCompletionItemProvider('python', {
+        provideCompletionItems: function(model, position) {
+            const word = model.getWordUntilPosition(position);
+            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
+            return { suggestions:[
+                { label: 'def', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'def ${1:function_name}(${2:args}):\n\t${3:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Create a function', range: range },
+                { label: 'class', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'class ${1:ClassName}:\n\tdef __init__(self):\n\t\t${2:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Create a class', range: range },
+                { label: 'for', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'for ${1:item} in ${2:iterable}:\n\t${3:pass}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'For loop', range: range },
+                { label: 'print', kind: monaco.languages.CompletionItemKind.Function, insertText: 'print(${1:value})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Print output', range: range }
+            ]};
+        }
+    });
+
+    // 🔥 2. HTML Boilerplate Snippet (!)
+    monaco.languages.registerCompletionItemProvider('html', {
+        provideCompletionItems: function(model, position) {
+            const word = model.getWordUntilPosition(position);
+            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
+            return { suggestions:[
+                { label: '!', kind: monaco.languages.CompletionItemKind.Snippet, insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>${1:Document}</title>\n</head>\n<body>\n\t${2}\n</body>\n</html>', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'HTML5 Boilerplate', range: range },
+                { label: 'html5', kind: monaco.languages.CompletionItemKind.Snippet, insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>${1:Document}</title>\n</head>\n<body>\n\t${2}\n</body>\n</html>', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'HTML5 Boilerplate', range: range }
+            ]};
+        }
+    });
+
+    // 🔥 3. CSS Reset Boilerplate (reset)
+    monaco.languages.registerCompletionItemProvider('css', {
+        provideCompletionItems: function(model, position) {
+            const word = model.getWordUntilPosition(position);
+            const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
+            return { suggestions:[
+                { label: 'reset', kind: monaco.languages.CompletionItemKind.Snippet, insertText: '* {\n\tmargin: 0;\n\tpadding: 0;\n\tbox-sizing: border-box;\n}\n\nbody {\n\tfont-family: sans-serif;\n\t${1}\n}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation: 'Basic CSS Reset', range: range }
+            ]};
+        }
+    });
+
     Object.keys(files).forEach(f => { monacoModels[f] = monaco.editor.createModel(files[f], getLanguage(f)); });
 
     editor = monaco.editor.create(document.getElementById('editor-container'), {
@@ -215,11 +264,16 @@ require(['vs/editor/editor.main'], function() {
         fontFamily: "'JetBrains Mono', monospace", 
         minimap: { enabled: false },
         suggestSelection: 'first',
-        acceptSuggestionOnEnter: 'on',
-        quickSuggestions: true
+        acceptSuggestionOnEnter: 'on', 
+        quickSuggestions: { other: true, comments: false, strings: true },
+        mouseWheelZoom: true
     });
 
-    if(currentFile && monacoModels[currentFile]) editor.setModel(monacoModels[currentFile]);
+    if(currentFile && monacoModels[currentFile]) {
+        editor.setModel(monacoModels[currentFile]);
+    } else {
+        editor.setModel(null);
+    }
 
     editor.onDidChangeModelContent(() => { 
         if(currentFile) { files[currentFile] = editor.getValue(); saveState(); }
@@ -229,17 +283,15 @@ require(['vs/editor/editor.main'], function() {
         document.getElementById("cursor-position").innerText = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
     });
 
-    // 🔥 MOBILE TOUCH FIX FOR SUGGESTIONS (The Magic Bullet) 🔥
+    // MOBILE TOUCH FIX FOR SUGGESTIONS
     document.addEventListener('touchend', (e) => {
         let suggestItem = e.target.closest('.monaco-list-row');
         if (suggestItem) {
-            e.preventDefault(); // Roks editor from blurring/closing keyboard
-            suggestItem.click(); // Zabardasti tap (click) trigger karta hai
+            e.preventDefault(); 
+            suggestItem.click(); 
         }
     }, { passive: false });
     
-    runBtn.disabled = false;
-    runBtn.innerHTML = `<i class="codicon codicon-play"></i> Run`;
     renderUI();
 });
 
