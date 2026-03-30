@@ -147,9 +147,11 @@ function closeTab(filename) {
     if (currentFile === filename) {
         currentFile = openTabs.length > 0 ? openTabs[openTabs.length - 1] : null;
         if (currentFile) switchFile(currentFile);
-        else { editor.setModel(null);
+        else {
+            editor.setModel(null);
             currentFile = null;
-            renderUI(); }
+            renderUI();
+        }
     } else { renderUI(); }
     saveState();
 }
@@ -177,9 +179,13 @@ function addNewFile() {
     });
 }
 
-function addNewFolder() { showModal("Create New Folder", "input", "", (name) => { files[`${name}/.keep`] = "";
+function addNewFolder() {
+    showModal("Create New Folder", "input", "", (name) => {
+        files[`${name}/.keep`] = "";
         renderUI();
-        saveState(); }); }
+        saveState();
+    });
+}
 
 function deleteFile(filename) {
     showModal("Delete File", "confirm", `Are you sure you want to delete '${filename}'?`, (confirmed) => {
@@ -304,25 +310,39 @@ require(['vs/editor/editor.main'], function() {
         mouseWheelZoom: true
     });
     
-    // 🚀 FIXED: HTML BOILERPLATE (!) AUR SUGGESTIONS KE LIYE
+    // ----------------------------------------------------
+    // 🚀 FIXED: HTML & CSS CUSTOM SNIPPETS (BOILERPLATES)
+    // ----------------------------------------------------
+    
+    // 1. HTML Ke Liye Snippets
     monaco.languages.registerCompletionItemProvider('html', {
         provideCompletionItems: function(model, position) {
-            var word = model.getWordUntilPosition(position);
-            var range = {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn
-            };
             return {
                 suggestions: [
                 {
-                    label: '!',
+                    label: '!', // Jab user ! type karega
                     kind: monaco.languages.CompletionItemKind.Snippet,
-                    documentation: 'HTML5 Boilerplate (Automatic Setup)',
-                    insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>Document</title>\n</head>\n<body>\n\t$1\n</body>\n</html>',
-                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                    range: range
+                    documentation: 'Generate Standard HTML5 Boilerplate',
+                    // Ye poora HTML code automatic aa jayega
+                    insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">\n\t<title>RC Document</title>\n\t<link rel="stylesheet" href="style.css">\n</head>\n<body>\n\t$1\n\n\t<script src="script.js"></script>\n</body>\n</html>',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }]
+            };
+        }
+    });
+    
+    // 2. CSS Ke Liye Snippets
+    monaco.languages.registerCompletionItemProvider('css', {
+        provideCompletionItems: function(model, position) {
+            return {
+                suggestions: [
+                {
+                    label: 'reset', // Jab user CSS me 'reset' type karega
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: 'Basic CSS Reset Boilerplate',
+                    // Ye basic CSS automatic aa jayegi
+                    insertText: '* {\n\tmargin: 0;\n\tpadding: 0;\n\tbox-sizing: border-box;\n}\n\nhtml, body {\n\theight: 100%;\n\tfont-family: sans-serif;\n}\n\n$1',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
                 }]
             };
         }
@@ -331,8 +351,10 @@ require(['vs/editor/editor.main'], function() {
     if (currentFile && monacoModels[currentFile]) editor.setModel(monacoModels[currentFile]);
     
     editor.onDidChangeModelContent(() => {
-        if (currentFile) { files[currentFile] = editor.getValue();
-            saveState(); }
+        if (currentFile) {
+            files[currentFile] = editor.getValue();
+            saveState();
+        }
     });
     
     editor.onDidChangeCursorPosition((e) => {
@@ -341,8 +363,10 @@ require(['vs/editor/editor.main'], function() {
     
     document.addEventListener('touchend', (e) => {
         let suggestItem = e.target.closest('.monaco-list-row');
-        if (suggestItem) { e.preventDefault();
-            suggestItem.click(); }
+        if (suggestItem) {
+            e.preventDefault();
+            suggestItem.click();
+        }
     }, { passive: false });
     
     renderUI();
@@ -432,8 +456,10 @@ async function runCode() {
         title.innerText = "TERMINAL - NODE";
         printTerm(`\n> node ${currentFile}`, "text-sys");
         let oldLog = console.log;
-        console.log = function(...a) { printTerm(a.join(' '));
-            oldLog.apply(console, a); };
+        console.log = function(...a) {
+            printTerm(a.join(' '));
+            oldLog.apply(console, a);
+        };
         try { eval(files[currentFile]); } catch (err) { printTerm(err.toString(), "text-err"); }
         console.log = oldLog;
         
@@ -458,8 +484,10 @@ async function runCode() {
 function toggleSidebar() {
     let sidebar = document.getElementById('sidebar');
     let overlay = document.getElementById('mobile-overlay');
-    if (window.innerWidth <= 768) { sidebar.classList.toggle('mobile-active');
-        overlay.classList.toggle('active'); }
+    if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('mobile-active');
+        overlay.classList.toggle('active');
+    }
     else {
         sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
         document.getElementById('resizer-v').style.display = sidebar.style.display === 'none' ? 'none' : 'block';
@@ -470,30 +498,52 @@ function toggleSidebar() {
 window.addEventListener('resize', () => {
     let sidebar = document.getElementById('sidebar');
     let overlay = document.getElementById('mobile-overlay');
-    if (window.innerWidth > 768) { sidebar.classList.remove('mobile-active');
+    if (window.innerWidth > 768) {
+        sidebar.classList.remove('mobile-active');
         overlay.classList.remove('active');
         sidebar.style.display = 'flex';
-        document.getElementById('resizer-v').style.display = 'block'; }
-    else { sidebar.style.display = '';
-        document.getElementById('resizer-v').style.display = ''; }
+        document.getElementById('resizer-v').style.display = 'block';
+    }
+    else {
+        sidebar.style.display = '';
+        document.getElementById('resizer-v').style.display = '';
+    }
     if (editor) setTimeout(() => editor.layout(), 100);
 });
 
 // Resizers Logic (PC)
 let isResizingV = false;
-document.getElementById('resizer-v').addEventListener('mousedown', () => { isResizingV = true;
-    document.body.style.cursor = 'col-resize'; });
+document.getElementById('resizer-v').addEventListener('mousedown', () => {
+    isResizingV = true;
+    document.body.style.cursor = 'col-resize';
+});
 document.addEventListener('mousemove', (e) => { if (isResizingV) { let w = e.clientX - 48; if (w > 150 && w < 500) document.getElementById('sidebar').style.width = w + 'px'; } });
-document.addEventListener('mouseup', () => { if (isResizingV) { isResizingV = false;
-        document.body.style.cursor = 'default'; if (editor) editor.layout(); } });
+document.addEventListener('mouseup', () => {
+    if (isResizingV) {
+        isResizingV = false;
+        document.body.style.cursor = 'default';
+        if (editor) editor.layout();
+    }
+});
 
 let isResizingH = false;
-document.getElementById('resizer-h').addEventListener('mousedown', () => { isResizingH = true;
-    document.body.style.cursor = 'row-resize'; });
+document.getElementById('resizer-h').addEventListener('mousedown', () => {
+    isResizingH = true;
+    document.body.style.cursor = 'row-resize';
+});
 document.addEventListener('mousemove', (e) => { if (isResizingH) { let h = window.innerHeight - e.clientY - 22; if (h > 100 && h < window.innerHeight * 0.8) document.getElementById('terminal-container').style.height = h + 'px'; } });
-document.addEventListener('mouseup', () => { if (isResizingH) { isResizingH = false;
-        document.body.style.cursor = 'default'; if (editor) editor.layout(); } });
+document.addEventListener('mouseup', () => {
+    if (isResizingH) {
+        isResizingH = false;
+        document.body.style.cursor = 'default';
+        if (editor) editor.layout();
+    }
+});
 
 // 🚀 Keyboard Shortcuts Map
-document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault();
-        runCode(); } });
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        runCode();
+    }
+});
