@@ -3,9 +3,9 @@
 // ==========================================
 
 const defaultSnippets = {
-    html: [{ trigger: "!", code: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n\t<meta charset=\"UTF-8\">\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\t<title>RC Document</title>\n\t<link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n\t$1\n\n\t<script src=\"script.js\"></script>\n</body>\n</html>" }],
-    css: [{ trigger: "reset", code: "* {\n\tmargin: 0;\n\tpadding: 0;\n\tbox-sizing: border-box;\n}\n$1" }],
-    javascript: [{ trigger: "clg", code: "console.log($1);" }, { trigger: "af", code: "const functionName = () => {\n\t$1\n};" }]
+    html: [{ trigger: "html5", code: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n\t<meta charset=\"UTF-8\">\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\t<title>RC Document</title>\n\t<link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n\t$1\n\n\t<script src=\"script.js\"></script>\n</body>\n</html>" }],
+    css: [{ trigger: "cssBoilerPlate", code: "* {\n\tmargin: 0;\n\tpadding: 0;\n\tbox-sizing: border-box;\n}\n$1" }],
+    javascript: [{ trigger: "log", code: "console.log($1);" }, { trigger: "af", code: "const functionName = () => {\n\t$1\n};" }]
 };
 
 let userSnippets = JSON.parse(localStorage.getItem('rc_user_snippets')) || defaultSnippets;
