@@ -1,5 +1,5 @@
 // ==========================================
-// FILE: snippets.js (Custom Snippet Manager)
+// FILE: snippets.js (Custom Snippet Manager & Emmet)
 // ==========================================
 
 const defaultSnippets = {
@@ -79,7 +79,7 @@ function deleteSnippet(lang, index) {
 }
 
 // =========================================================================
-// 🚀 MAIN FIX: Added "Range" logic for strict languages like HTML & Python
+// 🚀 MAIN FIX: Range logic + EMMET (VS Code Auto-complete)
 // =========================================================================
 let providersRegistered = false;
 
@@ -96,7 +96,7 @@ function initMonacoSnippets() {
         monaco.languages.registerCompletionItemProvider(lang, {
             provideCompletionItems: function(model, position) {
                 
-                // 🛠️ FIX: Current word aur cursor ki position calculate karo
+                // 🛠️ Current word aur cursor ki position
                 let word = model.getWordUntilPosition(position);
                 let range = {
                     startLineNumber: position.lineNumber,
@@ -114,7 +114,7 @@ function initMonacoSnippets() {
                         insertText: snip.code,
                         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "RC Custom Snippet (" + lang.toUpperCase() + ")",
-                        range: range // 👈 YE SABSE IMPORTANT THA (Iske bina HTML/Python ignore kar dete the)
+                        range: range // 👈 Important for strict languages
                     };
                 });
 
@@ -122,6 +122,15 @@ function initMonacoSnippets() {
             }
         });
     });
+
+    // 🔥 NEW: EMMET INITIALIZATION (For HTML/CSS default VS Code tags)
+    if (typeof emmetMonaco !== 'undefined') {
+        emmetMonaco.emmetHTML(monaco);
+        emmetMonaco.emmetCSS(monaco);
+        console.log("🚀 Emmet (VS Code Auto-complete) Successfully Loaded!");
+    } else {
+        console.warn("⚠️ Emmet script is missing in index.html! HTML tags won't auto-suggest like VS Code.");
+    }
 
     providersRegistered = true;
     console.log("✅ Monaco Custom Snippets Successfully Loaded with Range Fix!");
